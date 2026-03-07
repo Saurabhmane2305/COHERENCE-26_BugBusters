@@ -171,7 +171,9 @@ export interface UCSummary {
   total_pending_lakh: number; avg_pendency_score: number
   worst_state: string; worst_dept: string
 }
-export interface AuditSummaryResponse { audit: AuditSummary; uc: UCSummary }
+export interface AuditSummaryResponse {
+  summary: AuditSummaryResponse audit: AuditSummary; uc: UCSummary 
+}
 
 export interface DigestResponse {
   headline: string; body: string; action_today: string

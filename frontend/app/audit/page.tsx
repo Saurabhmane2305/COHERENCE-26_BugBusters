@@ -171,7 +171,10 @@ export default function AuditPage() {
       api.auditRisk(2024, 8),
       api.auditSummary(2024, 8),
     ])
-      .then(([r, s]) => { setRisks(r.risks ?? []); setSummary(s.summary ?? s) })
+      .then(([r, s]) => { 
+        setRisks((r.risks ?? []) as unknown as AuditRisk[])
+        setSummary((s.summary ?? s) as unknown as Summary) 
+      })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
   }, [])
