@@ -15,20 +15,19 @@ import sys
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-
-from routers.overview     import router as overview_router
-from routers.flow         import router as flow_router
-from routers.anomalies    import router as anomalies_router
-from routers.forecast     import router as forecast_router
-from routers.audit        import router as audit_router
-from routers.actions      import router as actions_router
-from routers.copilot      import router as copilot_router
+from routers.overview  import router as overview_router
+from routers.flow      import router as flow_router
+from routers.anomalies import router as anomalies_router
+from routers.forecast  import router as forecast_router
+from routers.audit     import router as audit_router
+from routers.actions   import router as actions_router
+from routers.copilot   import router as copilot_router
 
 logging.basicConfig(
     level  = logging.INFO,
@@ -39,7 +38,6 @@ logger = logging.getLogger(__name__)
 DEFAULT_YEAR  = 2024
 DEFAULT_MONTH = 8
 
-# Module-level cache for pre-generated digest
 _cached_digest: dict = {}
 
 
@@ -62,9 +60,9 @@ async def lifespan(app: FastAPI):
         from engines.graph_engine       import get_flow_summary
         from cache.snapshot_manager     import load_snapshot, save_snapshot, compute_delta
 
-        anomalies    = get_anomalies(year=DEFAULT_YEAR, limit=100)
-        lapse_risks  = get_pattern_lapse_risks(year=DEFAULT_YEAR, as_of_month=DEFAULT_MONTH, limit=100)
-        flow_sum     = get_flow_summary(year=DEFAULT_YEAR)
+        anomalies   = get_anomalies(year=DEFAULT_YEAR, limit=100)
+        lapse_risks = get_pattern_lapse_risks(year=DEFAULT_YEAR, as_of_month=DEFAULT_MONTH, limit=100)
+        flow_sum    = get_flow_summary(year=DEFAULT_YEAR)
 
         # 3. Delta
         prev_snapshot = load_snapshot()
@@ -77,7 +75,7 @@ async def lifespan(app: FastAPI):
         actions = generate_action_queue(year=DEFAULT_YEAR, as_of_month=DEFAULT_MONTH)
         logger.info(f"Action queue: {len(actions)} actions")
 
-        # 5. Pre-generate narrative digest (Groq call at startup)
+        # 5. Pre-generate narrative digest
         from engines.Copilot import generate_narrative_digest
         _cached_digest = generate_narrative_digest(
             delta        = delta,
@@ -95,27 +93,40 @@ async def lifespan(app: FastAPI):
     logger.info("=== API ready ===")
     yield
     logger.info("Shutdown")
-from fastapi.middleware.cors import CORSMiddleware
+
+
+# ── App ────────────────────────────────────────────────────────────────────────
 
 app = FastAPI(
     title       = "Budget Flow Intelligence API",
     description = "National Budget Flow Intelligence & Leakage Detection — v2 with AI Copilot",
     version     = "2.0.0",
     lifespan    = lifespan,
-   
 )
 
-origins = [
-    "*"
+# ── CORS ───────────────────────────────────────────────────────────────────────
+# Allow localhost for dev + all Vercel deployments for production.
+# add_middleware must be called BEFORE include_router.
+
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    # Vercel production URL — update this to your final domain if it changes
+    "https://coherence-26-bugbuster-og6r0p3u5-saurabhmane2305s-projects.vercel.app",
+    # Wildcard for all Vercel preview deployments of your project
+    "https://coherence-26-bugbuster*.vercel.app",
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins     = ALLOWED_ORIGINS,
+    allow_credentials = True,
+    allow_methods     = ["*"],
+    allow_headers     = ["*"],
 )
+
+# ── Routers ────────────────────────────────────────────────────────────────────
+
 app.include_router(overview_router)
 app.include_router(flow_router)
 app.include_router(anomalies_router)
@@ -124,14 +135,15 @@ app.include_router(audit_router)
 app.include_router(actions_router)
 app.include_router(copilot_router)
 
+# ── System endpoints ───────────────────────────────────────────────────────────
 
 @app.get("/health", tags=["System"])
 def health():
     return {
-        "status":         "ok",
-        "version":        "2.0.0",
-        "digest_ready":   bool(_cached_digest),
-        "digest_source":  _cached_digest.get("source", "not_generated"),
+        "status":        "ok",
+        "version":       "2.0.0",
+        "digest_ready":  bool(_cached_digest),
+        "digest_source": _cached_digest.get("source", "not_generated"),
     }
 
 
