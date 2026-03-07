@@ -24,7 +24,7 @@ export default function LeakageEdgeCard({ edge, delay = 0 }: Props) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
         <div style={{
           fontFamily: 'var(--font-mono)',
-          fontSize: 11,
+          fontSize: 17,
           color: 'var(--text-primary)',
           padding: '3px 8px',
           background: 'var(--bg-secondary)',
@@ -33,10 +33,10 @@ export default function LeakageEdgeCard({ edge, delay = 0 }: Props) {
         }}>
           {edge.from_entity}
         </div>
-        <div style={{ color: color, fontSize: 16, flexShrink: 0 }}>⟶</div>
+        <div style={{ color: color, fontSize: 19, flexShrink: 0 }}>⟶</div>
         <div style={{
           fontFamily: 'var(--font-mono)',
-          fontSize: 11,
+          fontSize: 17,
           color: 'var(--text-primary)',
           padding: '3px 8px',
           background: 'var(--bg-secondary)',
@@ -51,7 +51,7 @@ export default function LeakageEdgeCard({ edge, delay = 0 }: Props) {
           background: 'var(--red-dim)',
           border: `1px solid ${color}`,
           borderRadius: 3,
-          fontSize: 9,
+          fontSize: 15,
           fontFamily: 'var(--font-mono)',
           color,
           letterSpacing: '0.08em',
@@ -64,8 +64,8 @@ export default function LeakageEdgeCard({ edge, delay = 0 }: Props) {
       {/* Absorption bar */}
       <div style={{ marginBottom: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)' }}>ABSORPTION RATIO</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 15, color: 'var(--text-muted)' }}>ABSORPTION RATIO</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 17, color }}>
             {(edge.absorption_ratio * 100).toFixed(1)}%
           </span>
         </div>
@@ -86,20 +86,20 @@ export default function LeakageEdgeCard({ edge, delay = 0 }: Props) {
       {/* Numbers */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', marginBottom: 2 }}>GAP (LEAKED)</div>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, color }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 15, color: 'var(--text-muted)', marginBottom: 2 }}>GAP (LEAKED)</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 19, color }}>
             {fmtCr(edge.gap_amount)}
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', marginBottom: 2 }}>LEAKAGE %</div>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, color }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 15, color: 'var(--text-muted)', marginBottom: 2 }}>LEAKAGE %</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 19, color }}>
             {pct}%
           </div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', marginBottom: 2 }}>STATE</div>
-          <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{edge.state}</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 15, color: 'var(--text-muted)', marginBottom: 2 }}>STATE</div>
+          <div style={{ fontSize: 17, color: 'var(--text-secondary)' }}>{edge.state}</div>
         </div>
       </div>
     </div>
