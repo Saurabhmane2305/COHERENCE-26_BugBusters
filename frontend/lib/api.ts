@@ -172,7 +172,7 @@ export interface UCSummary {
   worst_state: string; worst_dept: string
 }
 export interface AuditSummaryResponse {
-  summary: AuditSummaryResponse audit: AuditSummary; uc: UCSummary 
+  summary: AuditSummary; audit: AuditSummary; uc: UCSummary 
 }
 
 export interface DigestResponse {
