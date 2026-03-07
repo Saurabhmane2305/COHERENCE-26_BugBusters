@@ -106,12 +106,12 @@ app = FastAPI(
 )
 
 origins = [
-    "https://coherence-26-bugbuster-og6r0p3u5-saurabhmane2305s-projects.vercel.app"
+    "*"
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
