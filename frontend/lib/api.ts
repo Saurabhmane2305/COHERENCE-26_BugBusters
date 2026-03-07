@@ -20,9 +20,6 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 export const fetcher = (url: string) =>
   fetch(BASE + url).then(r => { if (!r.ok) throw new Error(r.status.toString()); return r.json() })
 
-// Auth fetcher for client components — use with useAuth() hook from @clerk/nextjs
-// Usage: const { getToken } = useAuth()
-//        useSWR(['/api/flow/summary', getToken], authFetcher)
 export async function authFetcher([path, getToken]: [string, () => Promise<string | null>]) {
   const token = await getToken()
   const res = await fetch(BASE + path, {
@@ -41,25 +38,45 @@ export interface OverviewData {
   high_lapse_risk_count: number; health_score: number
   states_covered: number; departments_covered: number
 }
+
 export interface SankeyNode { id: string; level: string }
-export interface SankeyLink { source: string; target: string; value: number; absorption_ratio: number; is_leakage: boolean }
+export interface SankeyLink {
+  source: number; target: number; value: number
+  absorption_ratio: number; is_leakage: boolean; is_severe: boolean
+  color: string; stroke_width: number; gap_lakh: number
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'NORMAL'
+  source_name: string; target_name: string
+  tooltip: {
+    from: string; to: string
+    released_lakh: number; received_lakh: number
+    gap_lakh: number; absorption_pct: number
+    severity: string; state: string; department: string
+  }
+}
 export interface SankeyData { nodes: SankeyNode[]; links: SankeyLink[] }
+
 export interface LeakageEdge {
   from_entity: string; to_entity: string; from_level: string; to_level: string
   amount_released: number; amount_received: number; absorption_ratio: number
   gap_amount: number; leakage_score: number; state: string; scheme: string; month: number; year: number
 }
-export interface FlowSummary { year: number; total_released: number; total_received: number; avg_absorption_ratio: number; leakage_edge_count: number; total_gap_amount: number }
+export interface FlowSummary {
+  year: number; total_released: number; total_received: number
+  avg_absorption_ratio: number; leakage_edge_count: number; total_gap_amount: number
+}
+
 export interface Anomaly {
   exp_id: string; department: string; district: string; state: string; scheme: string
   month: number; year: number; utilization_rate: number; peer_mean: number; peer_std: number
-  z_score: number; severity: 'WARNING' | 'CRITICAL'; budget_allocated: number; amount_spent: number; explanation: string
+  z_score: number; severity: 'WARNING' | 'CRITICAL'
+  budget_allocated: number; amount_spent: number; explanation: string
 }
 export interface AnomalySummary {
   year: number; total_anomalies: number; critical_count: number; warning_count: number
   top_affected_departments: { department: string; count: number }[]
   top_affected_states: { state: string; count: number }[]
 }
+
 export interface LapseRisk {
   department: string; district: string; state: string; scheme: string
   year: number; as_of_month: number; monthly_rate: number; projected_final: number
@@ -75,19 +92,7 @@ export interface Trajectory {
   monthly_data: { month: number; cumulative_rate: number; projected: boolean }[]
   projected_final: number; lapse_risk_pct: number; risk_tier: string
 }
-export interface ReallocationRec {
-  from_state: string; from_district: string; from_department: string
-  to_district: string; to_department: string; to_state: string
-  transfer_amount: number; rationale: string; from_lapse_risk_pct: number; priority_score: number
-}
-export interface SimulateBody {
-  from_state: string; from_district: string; from_department: string
-  to_district: string; to_department: string; transfer_pct: number; year: number; as_of_month: number
-}
-export interface SimulateResult {
-  from_department: string; from_district: string; to_department: string; to_district: string
-  transfer_amount: number; from_new_lapse_risk_pct: number; to_new_projected_final: number; impact_summary: string
-}
+
 export interface ActionDetection {
   state: string; district: string; department: string
   utilization_pct: number; lapse_risk_pct: number
@@ -128,31 +133,46 @@ export interface DigestItem {
   department: string; district: string; state: string
   message: string; severity: string
 }
+
+// ── Audit Types (replaces Reallocation) ───────────────────────────────────────
+
+export interface ScoreBreakdown {
+  uc_pendency: number; absorption_gap: number; leakage: number; pattern_risk: number
+}
 export interface AuditRisk {
-  state: string; district: string; department: string; scheme: string; budget_lakh: number
-  audit_risk_score: number; risk_score: number; risk_tier: string
-  intervention_urgency: string; months_to_ponr: number; catchup_feasible: boolean
-  current_util_pct: number; projected_util_pct: number; velocity_trend: string
-  recent_velocity_pct: number; required_velocity_pct: number; ponr_month: number
-  scheme_expected_util_pct: number; scheme_deviation_pct: number
-  historical_rush_pct: number; march_rush_probability: number; rush_risk: string
-  util_2023_pct: number; util_2024_pct: number; persistence_delta: number; is_deteriorating: boolean
-  avg_release_month: number; avg_spend_month: number; lag_months: number
-  primary_objection: string; predicted_objection: string; secondary_objections: string[]; objection_text: string
-  score_breakdown: { velocity: number; scheme_deviation: number; march_rush: number; persistence: number; parking: number }
+  state: string; district: string; department: string; scheme: string
+  audit_risk_score: number; risk_tier: 'HIGH' | 'MEDIUM' | 'LOW'
+  utilization_pct: number; peer_mean_pct: number
+  leakage_score: number; absorption_ratio: number
+  uc_pending_pct: number; pattern: string
+  budget_lakh: number; likely_objection: string; objection_text: string
+  score_breakdown: ScoreBreakdown
 }
 export interface AuditRiskResponse { risks: AuditRisk[]; total: number }
-export interface AuditSummary {
-  total_departments: number; critical_count: number; high_risk_count: number
-  medium_risk_count: number; low_risk_count: number; avg_audit_score: number
-  ponr_count: number; total_at_risk_lakh: number; pct_march_rush_high: number
-  pct_deteriorating: number; avg_lag_months: number
-  worst_state: string; worst_department: string; most_common_objection: string
-  objection_breakdown: Record<string, number>
-  urgency_breakdown: Record<string, number>
-  velocity_breakdown: Record<string, number>
+
+export interface UCPendency {
+  state: string; district: string; department: string; scheme: string
+  total_received: number; total_spent: number
+  uc_pending_amount: number; uc_pendency_pct: number
+  pendency_score: number; months_exposed: number
+  utilization_pct: number; pattern: string; pending_lakh: number
 }
-export interface AuditSummaryResponse { summary: AuditSummary }
+export interface UCPendencyResponse { pendency: UCPendency[]; total: number }
+
+export interface AuditSummary {
+  total_departments: number; high_risk_count: number
+  medium_risk_count: number; low_risk_count: number
+  avg_audit_score: number; total_at_risk_lakh: number
+  top_objection: string; objection_breakdown: Record<string, number>
+  states_at_high_risk: number; worst_state: string; worst_department: string
+}
+export interface UCSummary {
+  total_departments: number; high_pendency_count: number
+  total_pending_lakh: number; avg_pendency_score: number
+  worst_state: string; worst_dept: string
+}
+export interface AuditSummaryResponse { audit: AuditSummary; uc: UCSummary }
+
 export interface DigestResponse {
   headline: string; body: string; action_today: string
   tone: 'URGENT' | 'WATCHFUL' | 'STABLE'; source: 'groq' | 'rule'
@@ -162,28 +182,59 @@ export interface CopilotAnswer {
 }
 
 // ── API calls ──────────────────────────────────────────────────────────────────
+
 export const api = {
-  overview:         (year = 2024) => get<OverviewData>('/api/overview', { year }),
-  sankey:           (year = 2024, state?: string) => get<SankeyData>('/api/flow/sankey', { year, state }),
-  leakageEdges:     (year = 2024, min_score = 1.0) => get<LeakageEdge[]>('/api/flow/leakage-edges', { year, min_score }),
-  flowSummary:      (year = 2024) => get<FlowSummary>('/api/flow/summary', { year }),
-  anomalies:        (year = 2024, severity?: string) => get<Anomaly[]>('/api/anomalies', { year, severity, explain: 'true' }),
-  anomalySummary:   (year = 2024) => get<AnomalySummary>('/api/anomalies/summary', { year }),
-  lapseRisks:       (year = 2024, as_of_month = 8, risk_tier?: string) => get<LapseRisk[]>('/api/forecast/lapse-risks', { year, as_of_month, risk_tier }),
-  trajectory:       (department: string, district: string, state: string, year = 2024) => get<Trajectory>('/api/forecast/trajectory', { department, district, state, year }),
-  reallocationRecs: (year = 2024, as_of_month = 8) => get<ReallocationRec[]>('/api/reallocation/recommendations', { year, as_of_month }),
-  simulate:         (body: SimulateBody) => post<SimulateResult>('/api/reallocation/simulate', body),
-  actions:          (year = 2024, as_of_month = 8, status?: string, priority?: string) =>
+  // Overview
+  overview:        (year = 2024) =>
+    get<OverviewData>('/api/overview', { year }),
+
+  // Fund Flow
+  sankey:          (year = 2024, state?: string) =>
+    get<SankeyData>('/api/flow/sankey', { year, state }),
+  leakageEdges:    (year = 2024, min_score = 1.0) =>
+    get<LeakageEdge[]>('/api/flow/leakage-edges', { year, min_score }),
+  flowSummary:     (year = 2024) =>
+    get<FlowSummary>('/api/flow/summary', { year }),
+
+  // Anomalies
+  anomalies:       (year = 2024, severity?: string) =>
+    get<Anomaly[]>('/api/anomalies', { year, severity, explain: 'true' }),
+  anomalySummary:  (year = 2024) =>
+    get<AnomalySummary>('/api/anomalies/summary', { year }),
+
+  // Forecast
+  lapseRisks:      (year = 2024, as_of_month = 8, risk_tier?: string) =>
+    get<LapseRisk[]>('/api/forecast/lapse-risks', { year, as_of_month, risk_tier }),
+  trajectory:      (department: string, district: string, state: string, year = 2024) =>
+    get<Trajectory>('/api/forecast/trajectory', { department, district, state, year }),
+
+  // Action Queue
+  actions:         (year = 2024, as_of_month = 8, status?: string, priority?: string) =>
     get<Action[]>('/api/actions', { year, as_of_month, status, priority }),
-  actionById:       (id: string) => get<Action>(`/api/actions/${id}`),
-  actionDigest:     (year = 2024, as_of_month = 8) => get<DigestItem[]>('/api/actions/digest', { year, as_of_month }),
-  approveAction:    (id: string, officer_note = '') => post<Action>(`/api/actions/${id}/approve`, { officer_note }),
-  dismissAction:    (id: string, officer_note = '') => post<Action>(`/api/actions/${id}/dismiss`, { officer_note }),
-  actionMemo:       (id: string) => get<{ memo: string }>(`/api/actions/${id}/memo`),
-  auditRisk:        (year = 2024, as_of_month = 8) => get<AuditRiskResponse>('/api/audit/risk', { year, as_of_month }),
-  auditSummary:     (year = 2024, as_of_month = 8) => get<AuditSummaryResponse>('/api/audit/summary', { year, as_of_month }),
-  digestCached:     () => get<DigestResponse>('/api/copilot/digest/cached'),
-  digest:           (year = 2024, as_of_month = 8) => get<DigestResponse>('/api/copilot/digest', { year, as_of_month }),
-  copilotAsk:       (question: string, year = 2024, as_of_month = 8, chat_history: {role:string;content:string}[] = []) =>
+  actionById:      (id: string) =>
+    get<Action>(`/api/actions/${id}`),
+  actionDigest:    (year = 2024, as_of_month = 8) =>
+    get<DigestItem[]>('/api/actions/digest', { year, as_of_month }),
+  approveAction:   (id: string, officer_note = '') =>
+    post<Action>(`/api/actions/${id}/approve`, { officer_note }),
+  dismissAction:   (id: string, officer_note = '') =>
+    post<Action>(`/api/actions/${id}/dismiss`, { officer_note }),
+  actionMemo:      (id: string) =>
+    get<{ memo: string }>(`/api/actions/${id}/memo`),
+
+  // Audit (replaces Reallocation)
+  auditRisk:       (year = 2024, as_of_month = 8, state?: string) =>
+    get<AuditRiskResponse>('/api/audit/risk', { year, as_of_month, state }),
+  auditUcPendency: (year = 2024, as_of_month = 8, state?: string) =>
+    get<UCPendencyResponse>('/api/audit/uc-pendency', { year, as_of_month, state }),
+  auditSummary:    (year = 2024, as_of_month = 8) =>
+    get<AuditSummaryResponse>('/api/audit/summary', { year, as_of_month }),
+
+  // AI Copilot
+  digestCached:    () =>
+    get<DigestResponse>('/api/copilot/digest/cached'),
+  digest:          (year = 2024, as_of_month = 8) =>
+    get<DigestResponse>('/api/copilot/digest', { year, as_of_month }),
+  copilotAsk:      (question: string, year = 2024, as_of_month = 8, chat_history: { role: string; content: string }[] = []) =>
     post<CopilotAnswer>('/api/copilot/ask', { question, year, as_of_month, chat_history }),
 }

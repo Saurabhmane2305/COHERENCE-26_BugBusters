@@ -95,7 +95,7 @@ async def lifespan(app: FastAPI):
     logger.info("=== API ready ===")
     yield
     logger.info("Shutdown")
-
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title       = "Budget Flow Intelligence API",
@@ -107,10 +107,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins     = ["http://localhost:3000"],  # your Next.js dev URL
-    allow_credentials = True,
-    allow_methods     = ["*"],
-    allow_headers     = ["*"],
+    allow_origins=["*"],   # fine for hackathon demo
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(overview_router)
