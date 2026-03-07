@@ -105,14 +105,17 @@ app = FastAPI(
    
 )
 
+origins = [
+    "https://coherence-26-bugbuster-og6r0p3u5-saurabhmane2305s-projects.vercel.app"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # fine for hackathon demo
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 app.include_router(overview_router)
 app.include_router(flow_router)
 app.include_router(anomalies_router)
