@@ -111,10 +111,12 @@ app = FastAPI(
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:3001",
-    # Vercel production URL — update this to your final domain if it changes
+
+    # Vercel preview
     "https://coherence-26-bugbuster-og6r0p3u5-saurabhmane2305s-projects.vercel.app",
-    # Wildcard for all Vercel preview deployments of your project
-    "https://coherence-26-bugbuster*.vercel.app",
+
+    # Vercel production (THIS WAS MISSING)
+    "https://coherence-26-bugbuster.vercel.app",
 ]
 
 app.add_middleware(
